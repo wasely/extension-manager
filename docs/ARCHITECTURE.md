@@ -29,14 +29,14 @@ The browser-only manager is useful without either integration. Reliable reloads 
 
 These operations remain distinct throughout the protocol and UI:
 
-| Action | Effect |
-| --- | --- |
-| Rebuild | Run a registered project build script. |
-| Reload extension | Ask an integrated target to reload itself. |
-| Restart extension | User-initiated disable followed by enable. |
-| Restart dev server | Restart a registered local process. |
-| Refresh test tab | Reload an opted-in web tab. |
-| Clear extension data | Destructive; excluded from the MVP. |
+| Action               | Effect                                     |
+| -------------------- | ------------------------------------------ |
+| Rebuild              | Run a registered project build script.     |
+| Reload extension     | Ask an integrated target to reload itself. |
+| Restart extension    | User-initiated disable followed by enable. |
+| Restart dev server   | Restart a registered local process.        |
+| Refresh test tab     | Reload an opted-in web tab.                |
+| Clear extension data | Destructive; excluded from the MVP.        |
 
 ## Manager extension
 

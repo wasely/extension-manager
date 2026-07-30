@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+  - fixtures/*
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.28.0
+
+overrides:
+  '@emnapi/core': 2.0.0-alpha.3
+  '@emnapi/runtime': 2.0.0-alpha.3
+
+onlyBuiltDependencies:
+  - esbuild
