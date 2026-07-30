@@ -65,3 +65,74 @@ export function createTargetRequest(
     type,
   });
 }
+
+export const bridgeProtocolVersion = 1;
+
+const bridgeEnvelopeSchema = z.object({
+  protocolVersion: z.literal(bridgeProtocolVersion),
+  requestId: z.string().min(1),
+});
+
+const emptyPayloadSchema = z.object({});
+
+export const bridgeRequestSchema = z.discriminatedUnion('type', [
+  bridgeEnvelopeSchema.extend({
+    type: z.literal('BRIDGE_HELLO'),
+    payload: z.object({ managerVersion: z.string().min(1) }),
+  }),
+  bridgeEnvelopeSchema.extend({
+    type: z.literal('BRIDGE_HEALTH'),
+    payload: emptyPayloadSchema,
+  }),
+  bridgeEnvelopeSchema.extend({
+    type: z.literal('PROJECT_LIST'),
+    payload: emptyPayloadSchema,
+  }),
+]);
+
+export type BridgeRequest = z.infer<typeof bridgeRequestSchema>;
+
+export const bridgeErrorSchema = z.object({
+  code: z.enum([
+    'INVALID_MESSAGE',
+    'INCOMPATIBLE_VERSION',
+    'INTERNAL_ERROR',
+    'NOT_FOUND',
+  ]),
+  message: z.string().min(1),
+});
+
+const bridgeResponseEnvelopeSchema = bridgeEnvelopeSchema.extend({
+  success: z.boolean(),
+});
+
+export const bridgeResponseSchema = z.discriminatedUnion('type', [
+  bridgeResponseEnvelopeSchema.extend({
+    type: z.literal('BRIDGE_HELLO'),
+    success: z.literal(true),
+    payload: z.object({
+      hostVersion: z.string().min(1),
+      platform: z.enum(['win32', 'darwin', 'linux']),
+    }),
+  }),
+  bridgeResponseEnvelopeSchema.extend({
+    type: z.literal('BRIDGE_HEALTH'),
+    success: z.literal(true),
+    payload: z.object({
+      status: z.literal('connected'),
+      uptimeSeconds: z.number().nonnegative(),
+    }),
+  }),
+  bridgeResponseEnvelopeSchema.extend({
+    type: z.literal('PROJECT_LIST'),
+    success: z.literal(true),
+    payload: z.object({ projects: z.array(z.unknown()) }),
+  }),
+  bridgeResponseEnvelopeSchema.extend({
+    type: z.literal('ERROR'),
+    success: z.literal(false),
+    error: bridgeErrorSchema,
+  }),
+]);
+
+export type BridgeResponse = z.infer<typeof bridgeResponseSchema>;

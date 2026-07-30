@@ -27,7 +27,7 @@ Slice 2 must enforce all of the following:
 
 ## Native host rules
 
-The planned `com.extension_manager.bridge` host must:
+The `com.extension_manager.bridge` host:
 
 - Allow only the exact stable Extension Manager origin.
 - Validate every length-prefixed JSON frame with shared Zod schemas.
@@ -38,6 +38,8 @@ The planned `com.extension_manager.bridge` host must:
 - Cap message size, log chunks, and in-memory log buffers.
 - Redact obvious secrets from displayed logs and environment data.
 - Avoid localhost HTTP/WebSocket servers unless a documented need emerges.
+
+The generated native-host manifest allowlists only `chrome-extension://gpmlcdigokplenooecjmlphknhaidnjf/`. Windows registration is per-user. Installers and uninstallers are explicit and reversible.
 
 ## Reporting
 

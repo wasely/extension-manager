@@ -4,7 +4,9 @@ Updated: 2026-07-30
 
 ## Current slice
 
-Slices 1–2 — browser manager and target integration: **complete in code; manual Chrome smoke test pending**.
+Slices 1–2: **complete in code; manual Chrome smoke test pending**.
+
+Slice 3 native transport and installation: **complete**. Project registry follows in Slice 4.
 
 ## Completed
 
@@ -25,6 +27,11 @@ Slices 1–2 — browser manager and target integration: **complete in code; man
 - `@extension-manager/target` sender-validated bridge.
 - Reload acknowledgement plus bounded PING recovery checks.
 - Integrated WXT fixture extension.
+- Zod-validated native hello, health, and project-list protocol.
+- Incremental native frame decoder with partial, multiple, invalid, and oversized-frame tests.
+- Standalone Windows native-host executable and Chrome registration.
+- macOS, Linux, Chromium, and Windows install/uninstall scripts.
+- Persisted bridge state with bounded reconnect and honest header status.
 
 ## Next
 
@@ -33,7 +40,6 @@ Slices 1–2 — browser manager and target integration: **complete in code; man
 
 ## Pending
 
-- Slice 3: native messaging protocol and host.
 - Slice 4: project scanner, project pairing, full dashboard.
 - Slice 5: process lifecycle and log streaming.
 - Slice 6: raw-project watcher and build/reload pipeline.
@@ -44,6 +50,6 @@ Slices 1–2 — browser manager and target integration: **complete in code; man
 - `corepack pnpm format`: passed.
 - `corepack pnpm lint`: passed.
 - `corepack pnpm typecheck`: passed.
-- `corepack pnpm test`: 24 tests passed across manager, protocol, and target SDK.
+- `corepack pnpm test`: 35 tests passed across manager, native host, protocol, and target SDK.
 - `corepack pnpm build`: passed for manager, protocol, target SDK, and integrated fixture.
 - Manual Chrome smoke test: pending.

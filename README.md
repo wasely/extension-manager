@@ -2,7 +2,7 @@
 
 Extension Manager is a Manifest V3 developer control center for finding, inspecting, enabling, and disabling locally loaded Chrome extensions from a persistent side panel.
 
-The browser-only MVP and cooperative target reload bridge are implemented. Local build/process control remains intentionally separated into the native-host slices; Chrome does not provide an API that directly reloads another extension.
+The browser manager, cooperative target reload bridge, and native companion transport are implemented. Chrome does not provide an API that directly reloads another extension, so reliable reloads use the target SDK.
 
 ## Current features
 
@@ -12,6 +12,7 @@ The browser-only MVP and cooperative target reload bridge are implemented. Local
 - Development/all/enabled/disabled filters
 - Favorites and tags stored in `chrome.storage.local`
 - User-initiated enable/disable controls with explicit Chrome errors
+- User-initiated restart fallback for enabled non-integrated extensions
 - Self-protection: Extension Manager cannot disable itself
 - Live refresh on install, uninstall, enable, and disable events
 - Options-page links, permission counts, extension IDs, versions, and icons
@@ -21,6 +22,8 @@ The browser-only MVP and cooperative target reload bridge are implemented. Local
 - Zod-validated target `PING`, metadata, and acknowledged self-reload protocol
 - Reload completion verified by bounded `PING` retries
 - Integrated WXT target fixture
+- Native companion with validated length-prefixed protocol and reconnect status
+- Windows, macOS, Linux, and Chromium host install/uninstall scripts
 
 ## Requirements
 
@@ -42,6 +45,14 @@ Then:
 3. Choose **Load unpacked**.
 4. Select `apps/manager-extension/.output/chrome-mv3`.
 5. Pin Extension Manager and click its toolbar icon. The side panel opens.
+
+Install the local bridge on Windows:
+
+```powershell
+& apps/native-host/scripts/install-windows.ps1
+```
+
+See [native host setup](docs/NATIVE_HOST_SETUP.md) for macOS, Linux, Chromium, and uninstall instructions.
 
 Subsequent daily management happens in the side panel. WXT development mode is available with:
 
@@ -69,6 +80,8 @@ corepack pnpm build
 
 ```text
 apps/manager-extension/   WXT + React manager extension
+apps/native-host/         Node native-messaging companion
+packages/protocol/        shared target and native schemas
 docs/ARCHITECTURE.md      system boundaries and delivery slices
 docs/IMPLEMENTATION_STATUS.md
 docs/SECURITY.md
@@ -81,7 +94,7 @@ Target authors: follow [target integration](docs/TARGET_INTEGRATION.md). The sta
 ## Current limitations
 
 - Reliable reload requires the target SDK; non-integrated extensions are represented honestly and cannot be auto-reloaded.
-- Build commands, file watching, project pairing, logs, and dev-server controls require the future native companion.
+- Project pairing, build commands, file watching, logs, and dev-server controls are the next native-host slice.
 - Optional tab refresh is not implemented and remains off.
 - Automated tests cover domain and component behavior; Chrome extension E2E coverage is pending.
 

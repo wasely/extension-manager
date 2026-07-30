@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  bridgeRequestSchema,
+  bridgeResponseSchema,
   createTargetRequest,
   targetRequestSchema,
   targetResponseSchema,
@@ -34,6 +36,42 @@ describe('target protocol', () => {
         requestId: 'request-1',
         type: 'RELOAD_ACCEPTED',
         accepted: false,
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('native bridge protocol', () => {
+  it('accepts a versioned health request', () => {
+    expect(
+      bridgeRequestSchema.parse({
+        protocolVersion: 1,
+        requestId: 'health-1',
+        type: 'BRIDGE_HEALTH',
+        payload: {},
+      }),
+    ).toMatchObject({ type: 'BRIDGE_HEALTH' });
+  });
+
+  it('rejects raw command execution', () => {
+    expect(
+      bridgeRequestSchema.safeParse({
+        protocolVersion: 1,
+        requestId: 'unsafe-1',
+        type: 'RUN_COMMAND',
+        payload: { command: 'rm -rf /' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('requires typed bridge errors', () => {
+    expect(
+      bridgeResponseSchema.safeParse({
+        protocolVersion: 1,
+        requestId: 'health-1',
+        type: 'ERROR',
+        success: false,
+        error: { message: 'No code' },
       }).success,
     ).toBe(false);
   });

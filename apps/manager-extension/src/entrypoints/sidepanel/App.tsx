@@ -10,6 +10,7 @@ import {
   type Preferences,
 } from '../../core/preferences';
 import { useManagedExtensions } from '../../hooks/use-managed-extensions';
+import { useNativeBridge } from '../../hooks/use-native-bridge';
 import { usePreferences } from '../../hooks/use-preferences';
 import { useTargetIntegrations } from '../../hooks/use-target-integrations';
 
@@ -50,6 +51,7 @@ export default function App() {
     setEnabled,
   } = useManagedExtensions();
   const { reload, states: targetStates } = useTargetIntegrations(extensions);
+  const bridgeState = useNativeBridge();
 
   useEffect(() => {
     applyTheme(preferences.theme);
@@ -113,11 +115,25 @@ export default function App() {
 
           <div className="flex items-center gap-1">
             <span
-              className="mr-1 inline-flex items-center gap-1.5 rounded-md border border-amber-500/15 bg-amber-500/7 px-2 py-1 text-[9px] font-medium text-amber-700 dark:text-amber-300"
-              title="Native companion arrives in Slice 3"
+              className={`mr-1 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[9px] font-medium ${
+                bridgeState.status === 'connected'
+                  ? 'border-emerald-500/15 bg-emerald-500/7 text-emerald-700 dark:text-emerald-300'
+                  : 'border-amber-500/15 bg-amber-500/7 text-amber-700 dark:text-amber-300'
+              }`}
+              title={bridgeState.error ?? 'Native companion connected'}
             >
-              <span className="size-1.5 rounded-full bg-amber-400" />
-              Browser only
+              <span
+                className={`size-1.5 rounded-full ${
+                  bridgeState.status === 'connected'
+                    ? 'bg-emerald-400'
+                    : 'bg-amber-400'
+                }`}
+              />
+              {bridgeState.status === 'connected'
+                ? 'Bridge connected'
+                : bridgeState.status === 'installation-missing'
+                  ? 'Bridge not installed'
+                  : 'Bridge offline'}
             </span>
             <button
               aria-label={`Theme: ${preferences.theme}`}
