@@ -30,6 +30,7 @@ function renderCard(
   const onRestart = vi.fn();
   render(
     <ExtensionCard
+      bridgeState={{ status: 'disconnected', error: null }}
       extension={{ ...extension, ...overrides }}
       favorite={false}
       onAddTag={vi.fn()}

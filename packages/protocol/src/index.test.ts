@@ -75,4 +75,16 @@ describe('native bridge protocol', () => {
       }).success,
     ).toBe(false);
   });
+
+  it('rejects unvalidated project-list entries', () => {
+    expect(
+      bridgeResponseSchema.safeParse({
+        protocolVersion: 1,
+        requestId: 'projects-1',
+        type: 'PROJECT_LIST',
+        success: true,
+        payload: { projects: [{ id: 'not-enough-fields' }] },
+      }).success,
+    ).toBe(false);
+  });
 });

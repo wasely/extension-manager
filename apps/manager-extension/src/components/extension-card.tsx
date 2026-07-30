@@ -12,6 +12,7 @@ import { type FormEvent, useState } from 'react';
 
 import { openOptionsPage } from '../chrome/management';
 import type { ManagedExtension } from '../core/extensions';
+import type { BridgeState } from '../core/bridge';
 import type { TargetState } from '../hooks/use-target-integrations';
 
 interface ExtensionCardProps {
@@ -20,6 +21,7 @@ interface ExtensionCardProps {
   pending: boolean;
   tags: string[];
   targetState: TargetState;
+  bridgeState: BridgeState;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
   onToggleEnabled: (enabled: boolean) => void;
@@ -39,6 +41,7 @@ function StatusDot({ tone }: { tone: 'green' | 'muted' | 'orange' }) {
 
 export function ExtensionCard({
   extension,
+  bridgeState,
   favorite,
   pending,
   tags,
@@ -252,7 +255,9 @@ export function ExtensionCard({
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px]">
             <dt className="text-zinc-400">Dev process</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">
-              Unavailable · bridge offline
+              {bridgeState.status === 'connected'
+                ? 'Available · bridge connected'
+                : `Unavailable · ${bridgeState.status}`}
             </dd>
             <dt className="text-zinc-400">Build</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">

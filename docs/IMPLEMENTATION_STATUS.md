@@ -6,7 +6,7 @@ Updated: 2026-07-30
 
 Slices 1–2: **complete in code; manual Chrome smoke test pending**.
 
-Slice 3 native transport and installation: **complete**. Project registry follows in Slice 4.
+Slice 3 native transport and installation: **foundation complete**. The persistent project registry is still pending.
 
 ## Completed
 
@@ -40,6 +40,7 @@ Slice 3 native transport and installation: **complete**. Project registry follow
 
 ## Pending
 
+- Slice 3 remainder: persistent project registry and mutation requests.
 - Slice 4: project scanner, project pairing, full dashboard.
 - Slice 5: process lifecycle and log streaming.
 - Slice 6: raw-project watcher and build/reload pipeline.
@@ -50,6 +51,6 @@ Slice 3 native transport and installation: **complete**. Project registry follow
 - `corepack pnpm format`: passed.
 - `corepack pnpm lint`: passed.
 - `corepack pnpm typecheck`: passed.
-- `corepack pnpm test`: 35 tests passed across manager, native host, protocol, and target SDK.
+- `corepack pnpm test`: 38 tests passed across manager, native host, protocol, and target SDK.
 - `corepack pnpm build`: passed for manager, protocol, target SDK, and integrated fixture.
 - Manual Chrome smoke test: pending.

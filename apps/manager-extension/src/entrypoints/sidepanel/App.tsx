@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { ExtensionCard } from '../../components/extension-card';
 import { type ExtensionFilter, selectExtensions } from '../../core/extensions';
+import { bridgeStatusLabel } from '../../core/bridge';
 import {
   addTag,
   removeTag,
@@ -129,11 +130,7 @@ export default function App() {
                     : 'bg-amber-400'
                 }`}
               />
-              {bridgeState.status === 'connected'
-                ? 'Bridge connected'
-                : bridgeState.status === 'installation-missing'
-                  ? 'Bridge not installed'
-                  : 'Bridge offline'}
+              {bridgeStatusLabel(bridgeState.status)}
             </span>
             <button
               aria-label={`Theme: ${preferences.theme}`}
@@ -246,6 +243,7 @@ export default function App() {
           <div className="grid grid-cols-1 gap-2.5 min-[720px]:grid-cols-2">
             {visibleExtensions.map((extension) => (
               <ExtensionCard
+                bridgeState={bridgeState}
                 extension={extension}
                 favorite={preferences.favorites.includes(extension.id)}
                 key={extension.id}

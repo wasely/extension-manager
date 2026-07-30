@@ -92,6 +92,30 @@ export const bridgeRequestSchema = z.discriminatedUnion('type', [
 
 export type BridgeRequest = z.infer<typeof bridgeRequestSchema>;
 
+export const extensionProjectSchema = z.object({
+  id: z.string().uuid(),
+  extensionId: z.string().min(1),
+  name: z.string().min(1),
+  sourceDirectory: z.string().min(1),
+  extensionRoot: z.string().min(1),
+  framework: z.enum(['wxt', 'plasmo', 'crxjs', 'vite', 'raw', 'unknown']),
+  packageManager: z.enum(['pnpm', 'npm', 'yarn', 'bun']),
+  devScript: z.string().min(1).optional(),
+  buildScript: z.string().min(1).optional(),
+  testScript: z.string().min(1).optional(),
+  reloadStrategy: z.enum(['framework', 'message', 'manual-toggle', 'manual']),
+  autoStart: z.boolean(),
+  autoReload: z.boolean(),
+  refreshTabs: z.enum(['off', 'active', 'matching']),
+  favorite: z.boolean(),
+  tags: z.array(z.string()),
+  workspaceIds: z.array(z.string()),
+  repositoryUrl: z.url().optional(),
+  testUrls: z.array(z.url()).optional(),
+});
+
+export type ExtensionProject = z.infer<typeof extensionProjectSchema>;
+
 export const bridgeErrorSchema = z.object({
   code: z.enum([
     'INVALID_MESSAGE',
@@ -126,7 +150,7 @@ export const bridgeResponseSchema = z.discriminatedUnion('type', [
   bridgeResponseEnvelopeSchema.extend({
     type: z.literal('PROJECT_LIST'),
     success: z.literal(true),
-    payload: z.object({ projects: z.array(z.unknown()) }),
+    payload: z.object({ projects: z.array(extensionProjectSchema) }),
   }),
   bridgeResponseEnvelopeSchema.extend({
     type: z.literal('ERROR'),

@@ -7,6 +7,7 @@ import {
   defaultBridgeState,
   disconnectedBridgeState,
   bridgeStateSchema,
+  bridgeRuntimeMessageSchema,
   type BridgeState,
 } from '../core/bridge';
 
@@ -43,6 +44,12 @@ export default defineBackground(() => {
       if (response.data.type === 'BRIDGE_HELLO' && response.data.success) {
         reconnectAttempt = 0;
         publishBridgeState({ status: 'connected', error: null });
+        currentPort.postMessage({
+          protocolVersion: bridgeProtocolVersion,
+          requestId: crypto.randomUUID(),
+          type: 'PROJECT_LIST',
+          payload: {},
+        });
       }
     });
 
@@ -81,6 +88,9 @@ export default defineBackground(() => {
   });
   chrome.runtime.onInstalled.addListener(enableActionSidePanel);
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'GET_BRIDGE_STATUS') sendResponse(bridgeState);
+    const parsed = bridgeRuntimeMessageSchema.safeParse(message);
+    if (parsed.success && parsed.data.type === 'GET_BRIDGE_STATUS') {
+      sendResponse(bridgeState);
+    }
   });
 });

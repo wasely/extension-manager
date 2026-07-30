@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import {
+  bridgeRuntimeMessageSchema,
   bridgeStateSchema,
   defaultBridgeState,
   type BridgeState,
@@ -11,17 +12,10 @@ export function useNativeBridge(): BridgeState {
 
   useEffect(() => {
     const update = (message: unknown) => {
-      if (
-        typeof message !== 'object' ||
-        message === null ||
-        !('type' in message) ||
-        message.type !== 'BRIDGE_STATUS_CHANGED' ||
-        !('state' in message)
-      ) {
-        return;
+      const parsed = bridgeRuntimeMessageSchema.safeParse(message);
+      if (parsed.success && parsed.data.type === 'BRIDGE_STATUS_CHANGED') {
+        setState(parsed.data.state);
       }
-      const parsed = bridgeStateSchema.safeParse(message.state);
-      if (parsed.success) setState(parsed.data);
     };
 
     chrome.runtime.onMessage.addListener(update);
