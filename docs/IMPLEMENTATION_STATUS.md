@@ -4,7 +4,7 @@ Updated: 2026-07-30
 
 ## Current slice
 
-Slice 1 — browser-only manager: **complete in code; manual Chrome smoke test pending**.
+Slices 1–2 — browser manager and target integration: **complete in code; manual Chrome smoke test pending**.
 
 ## Completed
 
@@ -18,11 +18,16 @@ Slice 1 — browser-only manager: **complete in code; manual Chrome smoke test p
 - User-initiated enable/disable with optimistic UI, Chrome rejection handling, and self-protection.
 - Options-page, extension metadata, permission counts, and copy-ID controls.
 - Domain and React component tests.
+- Stable manager ID derived from a committed public manifest key.
+- Shared Zod target protocol with PING, metadata, and reload messages.
+- `@extension-manager/target` sender-validated bridge.
+- Reload acknowledgement plus bounded PING recovery checks.
+- Integrated WXT fixture extension.
 
 ## Next
 
 - Manually load `.output/chrome-mv3` in Chrome and smoke-test real management actions.
-- Slice 2: stable manager ID, target SDK, PING, verified target reload.
+- Load manager and integrated fixture together for a real Chrome reload smoke test.
 
 ## Pending
 
@@ -37,6 +42,6 @@ Slice 1 — browser-only manager: **complete in code; manual Chrome smoke test p
 - `corepack pnpm format`: passed.
 - `corepack pnpm lint`: passed.
 - `corepack pnpm typecheck`: passed.
-- `corepack pnpm test`: 10 tests passed.
-- `corepack pnpm build`: passed; Chrome MV3 output generated.
+- `corepack pnpm test`: 18 tests passed across manager, protocol, and target SDK.
+- `corepack pnpm build`: passed for manager, protocol, target SDK, and integrated fixture.
 - Manual Chrome smoke test: pending.

@@ -2,7 +2,7 @@
 
 Extension Manager is a Manifest V3 developer control center for finding, inspecting, enabling, and disabling locally loaded Chrome extensions from a persistent side panel.
 
-The browser-only MVP is implemented. Reliable cross-extension reloads and local build/process control are intentionally separated into later integration and native-host slices; Chrome does not provide an API that directly reloads another extension.
+The browser-only MVP and cooperative target reload bridge are implemented. Local build/process control remains intentionally separated into the native-host slices; Chrome does not provide an API that directly reloads another extension.
 
 ## Current features
 
@@ -17,6 +17,10 @@ The browser-only MVP is implemented. Reliable cross-extension reloads and local 
 - Options-page links, permission counts, extension IDs, versions, and icons
 - System, dark, and light themes
 - Honest unavailable states for target integration, builds, reloads, and the local companion
+- Stable development ID for exact target allowlisting
+- Zod-validated target `PING`, metadata, and acknowledged self-reload protocol
+- Reload completion verified by bounded `PING` retries
+- Integrated WXT target fixture
 
 ## Requirements
 
@@ -72,9 +76,11 @@ docs/SECURITY.md
 
 See [architecture](docs/ARCHITECTURE.md), [implementation status](docs/IMPLEMENTATION_STATUS.md), and [security model](docs/SECURITY.md).
 
+Target authors: follow [target integration](docs/TARGET_INTEGRATION.md). The stable manager ID is `gpmlcdigokplenooecjmlphknhaidnjf`.
+
 ## Current limitations
 
-- Reliable reload is not available until the target SDK is implemented.
+- Reliable reload requires the target SDK; non-integrated extensions are represented honestly and cannot be auto-reloaded.
 - Build commands, file watching, project pairing, logs, and dev-server controls require the future native companion.
 - Optional tab refresh is not implemented and remains off.
 - Automated tests cover domain and component behavior; Chrome extension E2E coverage is pending.

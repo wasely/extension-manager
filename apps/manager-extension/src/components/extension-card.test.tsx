@@ -31,10 +31,12 @@ function renderCard(
       favorite={false}
       onAddTag={vi.fn()}
       onRemoveTag={vi.fn()}
+      onReload={vi.fn()}
       onToggleEnabled={onToggleEnabled}
       onToggleFavorite={vi.fn()}
       pending={false}
       tags={[]}
+      targetState={{ integration: 'not-integrated', reload: 'current' }}
     />,
   );
   return onToggleEnabled;

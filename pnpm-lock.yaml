@@ -33,6 +33,9 @@ importers:
 
   apps/manager-extension:
     dependencies:
+      '@extension-manager/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
       lucide-react:
         specifier: 1.28.0
         version: 1.28.0(react@19.2.8)
@@ -88,6 +91,48 @@ importers:
       wxt:
         specifier: 0.21.2
         version: 0.21.2(eslint@10.8.0(jiti@2.7.0))(rolldown@1.1.5)(typescript@5.9.3)(vite@8.1.5(jiti@2.7.0))
+
+  fixtures/integrated-target-extension:
+    dependencies:
+      '@extension-manager/target':
+        specifier: workspace:*
+        version: link:../../packages/target-sdk
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      wxt:
+        specifier: 0.21.2
+        version: 0.21.2(eslint@10.8.0(jiti@2.7.0))(rolldown@1.1.5)(typescript@5.9.3)(vite@8.1.5(jiti@2.7.0))
+
+  packages/protocol:
+    dependencies:
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(jsdom@30.0.1)(vite@8.1.5(jiti@2.7.0))
+
+  packages/target-sdk:
+    dependencies:
+      '@extension-manager/protocol':
+        specifier: workspace:*
+        version: link:../protocol
+    devDependencies:
+      '@types/chrome':
+        specifier: 0.2.2
+        version: 0.2.2
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(jsdom@30.0.1)(vite@8.1.5(jiti@2.7.0))
 
 packages:
 

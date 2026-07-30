@@ -1,0 +1,25 @@
+{
+  "name": "@extension-manager/target",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run src",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@extension-manager/protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.2.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

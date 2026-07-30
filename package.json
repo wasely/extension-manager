@@ -8,13 +8,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "corepack pnpm --filter @extension-manager/manager-extension build",
+    "build": "corepack pnpm -r --if-present build",
     "dev": "corepack pnpm --filter @extension-manager/manager-extension dev",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "eslint .",
-    "test": "corepack pnpm --filter @extension-manager/manager-extension test",
-    "typecheck": "corepack pnpm --filter @extension-manager/manager-extension typecheck",
+    "test": "corepack pnpm --filter @extension-manager/protocol build && corepack pnpm --filter @extension-manager/target build && corepack pnpm -r --if-present test",
+    "typecheck": "corepack pnpm --filter @extension-manager/protocol build && corepack pnpm --filter @extension-manager/target build && corepack pnpm -r --if-present typecheck",
     "validate": "corepack pnpm format && corepack pnpm lint && corepack pnpm typecheck && corepack pnpm test && corepack pnpm build"
   },
   "devDependencies": {

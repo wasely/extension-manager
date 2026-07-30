@@ -11,6 +11,7 @@ import {
 } from '../../core/preferences';
 import { useManagedExtensions } from '../../hooks/use-managed-extensions';
 import { usePreferences } from '../../hooks/use-preferences';
+import { useTargetIntegrations } from '../../hooks/use-target-integrations';
 
 const filters: Array<{ label: string; value: ExtensionFilter }> = [
   { label: 'Development', value: 'development' },
@@ -29,7 +30,10 @@ function applyTheme(theme: Preferences['theme']) {
 
 export default function App() {
   const [query, setQuery] = useState('');
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{
+    message: string;
+    tone: 'success' | 'error';
+  } | null>(null);
   const {
     error: preferencesError,
     preferences,
@@ -38,6 +42,7 @@ export default function App() {
   } = usePreferences();
   const { extensions, error, loading, pendingIds, refresh, setEnabled } =
     useManagedExtensions();
+  const { reload, states: targetStates } = useTargetIntegrations(extensions);
 
   useEffect(() => {
     applyTheme(preferences.theme);
@@ -227,12 +232,23 @@ export default function App() {
                   removeTag(current, extension.id, tag),
                 )
               }
+              onReload={() => {
+                void reload(extension).then((success) => {
+                  setNotice({
+                    message: success
+                      ? `${extension.name} reloaded and reachable`
+                      : `${extension.name} reload timed out`,
+                    tone: success ? 'success' : 'error',
+                  });
+                });
+              }}
               onToggleEnabled={(enabled) => {
                 void setEnabled(extension, enabled).then((success) => {
                   if (success) {
-                    setNotice(
-                      `${extension.name} ${enabled ? 'enabled' : 'disabled'}`,
-                    );
+                    setNotice({
+                      message: `${extension.name} ${enabled ? 'enabled' : 'disabled'}`,
+                      tone: 'success',
+                    });
                   }
                 });
               }}
@@ -243,6 +259,12 @@ export default function App() {
               }
               pending={pendingIds.has(extension.id)}
               tags={preferences.tags[extension.id] ?? []}
+              targetState={
+                targetStates[extension.id] ?? {
+                  integration: extension.isSelf ? 'not-integrated' : 'checking',
+                  reload: 'current',
+                }
+              }
             />
           ))
         ) : (
@@ -262,13 +284,21 @@ export default function App() {
       {notice && (
         <div
           aria-live="polite"
-          className="fixed right-3 bottom-3 left-3 flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-zinc-950 px-3 py-2 text-[11px] font-medium text-white shadow-xl dark:bg-zinc-100 dark:text-zinc-900"
+          className={`fixed right-3 bottom-3 left-3 flex items-center gap-2 rounded-lg border bg-zinc-950 px-3 py-2 text-[11px] font-medium text-white shadow-xl dark:bg-zinc-100 dark:text-zinc-900 ${
+            notice.tone === 'success'
+              ? 'border-emerald-400/20'
+              : 'border-red-400/30'
+          }`}
           role="status"
         >
-          <span className="flex size-4 items-center justify-center rounded-full bg-emerald-500 text-white">
-            ✓
+          <span
+            className={`flex size-4 items-center justify-center rounded-full text-white ${
+              notice.tone === 'success' ? 'bg-emerald-500' : 'bg-red-500'
+            }`}
+          >
+            {notice.tone === 'success' ? '✓' : '!'}
           </span>
-          {notice}
+          {notice.message}
         </div>
       )}
     </main>

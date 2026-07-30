@@ -4,6 +4,7 @@ import {
   Copy,
   ExternalLink,
   Plus,
+  RotateCw,
   Star,
   X,
 } from 'lucide-react';
@@ -11,16 +12,19 @@ import { type FormEvent, useState } from 'react';
 
 import { openOptionsPage } from '../chrome/management';
 import type { ManagedExtension } from '../core/extensions';
+import type { TargetState } from '../hooks/use-target-integrations';
 
 interface ExtensionCardProps {
   extension: ManagedExtension;
   favorite: boolean;
   pending: boolean;
   tags: string[];
+  targetState: TargetState;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
   onToggleEnabled: (enabled: boolean) => void;
   onToggleFavorite: () => void;
+  onReload: () => void;
 }
 
 function StatusDot({ tone }: { tone: 'green' | 'muted' | 'orange' }) {
@@ -41,6 +45,8 @@ export function ExtensionCard({
   onRemoveTag,
   onToggleEnabled,
   onToggleFavorite,
+  onReload,
+  targetState,
 }: ExtensionCardProps) {
   const [copied, setCopied] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -120,8 +126,17 @@ export function ExtensionCard({
               Chrome {extension.enabled ? 'enabled' : 'disabled'}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <StatusDot tone="orange" />
-              Target not integrated
+              <StatusDot
+                tone={
+                  targetState.integration === 'connected' ? 'green' : 'orange'
+                }
+              />
+              Target{' '}
+              {targetState.integration === 'connected'
+                ? 'integrated'
+                : targetState.integration === 'checking'
+                  ? 'checking'
+                  : 'not integrated'}
             </span>
           </div>
         </div>
@@ -173,6 +188,28 @@ export function ExtensionCard({
             Options
           </button>
         )}
+        <button
+          className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-white/7 dark:hover:text-zinc-100"
+          disabled={
+            extension.isSelf ||
+            targetState.integration !== 'connected' ||
+            targetState.reload === 'reloading'
+          }
+          onClick={onReload}
+          title={
+            targetState.integration === 'connected'
+              ? 'Reload extension through its target bridge'
+              : 'Install the target bridge to enable reliable reload'
+          }
+          type="button"
+        >
+          <RotateCw
+            aria-hidden="true"
+            className={targetState.reload === 'reloading' ? 'animate-spin' : ''}
+            size={13}
+          />
+          {targetState.reload === 'reloading' ? 'Reloading…' : 'Reload'}
+        </button>
       </div>
 
       {actionError && (
@@ -206,7 +243,13 @@ export function ExtensionCard({
             </dd>
             <dt className="text-zinc-400">Reload</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">
-              Unavailable · target not integrated
+              {targetState.integration !== 'connected'
+                ? 'Unavailable · target not integrated'
+                : targetState.reload === 'failed'
+                  ? 'Failed · target did not return'
+                  : targetState.reload === 'reloading'
+                    ? 'Reloading · waiting for PING'
+                    : 'Current · target reachable'}
             </dd>
             <dt className="text-zinc-400">Permissions</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">
