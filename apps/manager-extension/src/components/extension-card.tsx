@@ -25,6 +25,7 @@ interface ExtensionCardProps {
   onToggleEnabled: (enabled: boolean) => void;
   onToggleFavorite: () => void;
   onReload: () => void;
+  onRestart: () => void;
 }
 
 function StatusDot({ tone }: { tone: 'green' | 'muted' | 'orange' }) {
@@ -46,6 +47,7 @@ export function ExtensionCard({
   onToggleEnabled,
   onToggleFavorite,
   onReload,
+  onRestart,
   targetState,
 }: ExtensionCardProps) {
   const [copied, setCopied] = useState(false);
@@ -71,9 +73,9 @@ export function ExtensionCard({
   };
 
   return (
-    <article className="group rounded-xl border border-zinc-200/80 bg-white p-3.5 shadow-sm shadow-zinc-950/5 transition-[border-color,box-shadow,transform] duration-150 hover:border-zinc-300 hover:shadow-md dark:border-white/8 dark:bg-zinc-900/75 dark:shadow-black/20 dark:hover:border-white/15">
+    <article className="group rounded-lg border border-zinc-200/80 bg-white p-3 shadow-sm shadow-zinc-950/5 transition-[border-color,box-shadow] duration-150 hover:border-zinc-300 hover:shadow-md dark:border-white/8 dark:bg-zinc-900/75 dark:shadow-black/20 dark:hover:border-white/15">
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-500 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300">
+        <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-500 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300">
           {extension.iconUrl ? (
             <img
               alt=""
@@ -125,28 +127,30 @@ export function ExtensionCard({
               <StatusDot tone={extension.enabled ? 'green' : 'muted'} />
               Chrome {extension.enabled ? 'enabled' : 'disabled'}
             </span>
-            <span className="inline-flex items-center gap-1.5">
-              <StatusDot
-                tone={
-                  targetState.integration === 'connected' ? 'green' : 'orange'
-                }
-              />
-              Target{' '}
-              {targetState.integration === 'connected'
-                ? 'integrated'
-                : targetState.integration === 'checking'
-                  ? 'checking'
-                  : 'not integrated'}
-            </span>
+            {!extension.isSelf && (
+              <span className="inline-flex items-center gap-1.5">
+                <StatusDot
+                  tone={
+                    targetState.integration === 'connected' ? 'green' : 'orange'
+                  }
+                />
+                Target{' '}
+                {targetState.integration === 'connected'
+                  ? 'integrated'
+                  : targetState.integration === 'checking'
+                    ? 'checking'
+                    : 'not integrated'}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3 dark:border-white/7">
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-zinc-100 pt-2.5 dark:border-white/7">
         <button
           aria-checked={extension.enabled}
           aria-label={`${extension.enabled ? 'Disable' : 'Enable'} ${extension.name}`}
-          className="inline-flex h-7 items-center gap-2 rounded-lg border border-zinc-200 px-2.5 text-[11px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/5"
+          className="inline-flex h-7 shrink-0 items-center gap-2 rounded-lg border border-zinc-200 px-2.5 text-[11px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/5"
           disabled={pending || extension.isSelf}
           onClick={() => onToggleEnabled(!extension.enabled)}
           role="switch"
@@ -158,7 +162,7 @@ export function ExtensionCard({
           type="button"
         >
           <span
-            className={`relative h-3.5 w-6 rounded-full transition-colors ${
+            className={`relative h-3.5 w-6 shrink-0 rounded-full transition-colors ${
               extension.enabled
                 ? 'bg-emerald-500'
                 : 'bg-zinc-300 dark:bg-zinc-600'
@@ -188,28 +192,41 @@ export function ExtensionCard({
             Options
           </button>
         )}
-        <button
-          className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-white/7 dark:hover:text-zinc-100"
-          disabled={
-            extension.isSelf ||
-            targetState.integration !== 'connected' ||
-            targetState.reload === 'reloading'
-          }
-          onClick={onReload}
-          title={
-            targetState.integration === 'connected'
-              ? 'Reload extension through its target bridge'
-              : 'Install the target bridge to enable reliable reload'
-          }
-          type="button"
-        >
-          <RotateCw
-            aria-hidden="true"
-            className={targetState.reload === 'reloading' ? 'animate-spin' : ''}
-            size={13}
-          />
-          {targetState.reload === 'reloading' ? 'Reloading…' : 'Reload'}
-        </button>
+        {!extension.isSelf && (
+          <button
+            aria-label={`${targetState.integration === 'connected' ? 'Reload' : 'Restart'} ${extension.name}`}
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-white/7 dark:hover:text-zinc-100"
+            disabled={
+              pending ||
+              targetState.reload === 'reloading' ||
+              (targetState.integration !== 'connected' && !extension.enabled)
+            }
+            onClick={
+              targetState.integration === 'connected' ? onReload : onRestart
+            }
+            title={
+              targetState.integration === 'connected'
+                ? 'Reload extension through its target bridge'
+                : !extension.enabled
+                  ? 'Enable the extension before restarting it'
+                  : 'Restart extension by disabling and re-enabling it'
+            }
+            type="button"
+          >
+            <RotateCw
+              aria-hidden="true"
+              className={
+                targetState.reload === 'reloading' ? 'animate-spin' : ''
+              }
+              size={13}
+            />
+            {targetState.reload === 'reloading'
+              ? 'Reloading…'
+              : targetState.integration === 'connected'
+                ? 'Reload'
+                : 'Restart'}
+          </button>
+        )}
       </div>
 
       {actionError && (
@@ -243,13 +260,15 @@ export function ExtensionCard({
             </dd>
             <dt className="text-zinc-400">Reload</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">
-              {targetState.integration !== 'connected'
-                ? 'Unavailable · target not integrated'
-                : targetState.reload === 'failed'
-                  ? 'Failed · target did not return'
-                  : targetState.reload === 'reloading'
-                    ? 'Reloading · waiting for PING'
-                    : 'Current · target reachable'}
+              {extension.isSelf
+                ? 'Manager protected'
+                : targetState.integration !== 'connected'
+                  ? 'Manual restart available'
+                  : targetState.reload === 'failed'
+                    ? 'Failed · target did not return'
+                    : targetState.reload === 'reloading'
+                      ? 'Reloading · waiting for PING'
+                      : 'Current · target reachable'}
             </dd>
             <dt className="text-zinc-400">Permissions</dt>
             <dd className="text-right text-zinc-600 dark:text-zinc-300">

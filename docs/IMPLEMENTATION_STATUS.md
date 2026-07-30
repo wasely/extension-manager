@@ -16,6 +16,8 @@ Slices 1–2 — browser manager and target integration: **complete in code; man
 - Real `chrome.management` inventory with development filtering and live events.
 - Search, enabled-state filters, favorites, tags, themes, and stored preferences.
 - User-initiated enable/disable with optimistic UI, Chrome rejection handling, and self-protection.
+- User-initiated restart fallback for enabled, non-integrated extensions, with Chrome rejection handling.
+- Compact responsive cards with collision-safe toggles and two-column wide-panel layout.
 - Options-page, extension metadata, permission counts, and copy-ID controls.
 - Domain and React component tests.
 - Stable manager ID derived from a committed public manifest key.
@@ -42,6 +44,6 @@ Slices 1–2 — browser manager and target integration: **complete in code; man
 - `corepack pnpm format`: passed.
 - `corepack pnpm lint`: passed.
 - `corepack pnpm typecheck`: passed.
-- `corepack pnpm test`: 18 tests passed across manager, protocol, and target SDK.
+- `corepack pnpm test`: 24 tests passed across manager, protocol, and target SDK.
 - `corepack pnpm build`: passed for manager, protocol, target SDK, and integrated fixture.
 - Manual Chrome smoke test: pending.

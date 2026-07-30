@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import {
   getManagedExtensions,
+  restartExtension,
   setExtensionEnabled,
   subscribeToManagementChanges,
 } from '../chrome/management';
@@ -13,6 +14,7 @@ interface ManagedExtensionsState {
   loading: boolean;
   pendingIds: Set<string>;
   refresh: () => Promise<void>;
+  restart: (extension: ManagedExtension) => Promise<boolean>;
   setEnabled: (
     extension: ManagedExtension,
     enabled: boolean,
@@ -76,5 +78,37 @@ export function useManagedExtensions(): ManagedExtensionsState {
     [refresh],
   );
 
-  return { extensions, error, loading, pendingIds, refresh, setEnabled };
+  const restart = useCallback(
+    async (extension: ManagedExtension) => {
+      setPendingIds((current) => new Set(current).add(extension.id));
+
+      try {
+        await restartExtension(extension);
+        setError(null);
+        await refresh();
+        return true;
+      } catch (caughtError) {
+        setError(errorMessage(caughtError));
+        await refresh();
+        return false;
+      } finally {
+        setPendingIds((current) => {
+          const next = new Set(current);
+          next.delete(extension.id);
+          return next;
+        });
+      }
+    },
+    [refresh],
+  );
+
+  return {
+    extensions,
+    error,
+    loading,
+    pendingIds,
+    refresh,
+    restart,
+    setEnabled,
+  };
 }

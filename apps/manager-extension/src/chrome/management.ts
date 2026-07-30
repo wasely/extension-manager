@@ -17,6 +17,17 @@ export async function setExtensionEnabled(
   await chrome.management.setEnabled(extension.id, enabled);
 }
 
+export async function restartExtension(
+  extension: ManagedExtension,
+): Promise<void> {
+  if (extension.isSelf) {
+    throw new Error('Extension Manager cannot restart itself.');
+  }
+
+  await chrome.management.setEnabled(extension.id, false);
+  await chrome.management.setEnabled(extension.id, true);
+}
+
 export async function openOptionsPage(
   extension: ManagedExtension,
 ): Promise<void> {

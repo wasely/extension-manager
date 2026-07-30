@@ -40,8 +40,15 @@ export default function App() {
     ready,
     updatePreferences,
   } = usePreferences();
-  const { extensions, error, loading, pendingIds, refresh, setEnabled } =
-    useManagedExtensions();
+  const {
+    extensions,
+    error,
+    loading,
+    pendingIds,
+    refresh,
+    restart,
+    setEnabled,
+  } = useManagedExtensions();
   const { reload, states: targetStates } = useTargetIntegrations(extensions);
 
   useEffect(() => {
@@ -195,9 +202,9 @@ export default function App() {
         </div>
       </header>
 
-      <section aria-busy={loading || !ready} className="space-y-2.5 p-3.5">
+      <section aria-busy={loading || !ready} className="p-3">
         {(error || preferencesError) && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-700 dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-300">
+          <div className="mb-2.5 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-700 dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-300">
             <AlertCircle
               aria-hidden="true"
               className="mt-0.5 shrink-0"
@@ -208,7 +215,10 @@ export default function App() {
         )}
 
         {(loading || !ready) && !extensions.length ? (
-          <div aria-label="Loading extensions" className="space-y-2.5">
+          <div
+            aria-label="Loading extensions"
+            className="grid grid-cols-1 gap-2.5 min-[720px]:grid-cols-2"
+          >
             {[0, 1, 2].map((item) => (
               <div
                 className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-white dark:border-white/8 dark:bg-zinc-900"
@@ -217,56 +227,70 @@ export default function App() {
             ))}
           </div>
         ) : visibleExtensions.length ? (
-          visibleExtensions.map((extension) => (
-            <ExtensionCard
-              extension={extension}
-              favorite={preferences.favorites.includes(extension.id)}
-              key={extension.id}
-              onAddTag={(tag) =>
-                updatePreferences((current) =>
-                  addTag(current, extension.id, tag),
-                )
-              }
-              onRemoveTag={(tag) =>
-                updatePreferences((current) =>
-                  removeTag(current, extension.id, tag),
-                )
-              }
-              onReload={() => {
-                void reload(extension).then((success) => {
-                  setNotice({
-                    message: success
-                      ? `${extension.name} reloaded and reachable`
-                      : `${extension.name} reload timed out`,
-                    tone: success ? 'success' : 'error',
-                  });
-                });
-              }}
-              onToggleEnabled={(enabled) => {
-                void setEnabled(extension, enabled).then((success) => {
-                  if (success) {
-                    setNotice({
-                      message: `${extension.name} ${enabled ? 'enabled' : 'disabled'}`,
-                      tone: 'success',
-                    });
-                  }
-                });
-              }}
-              onToggleFavorite={() =>
-                updatePreferences((current) =>
-                  toggleFavorite(current, extension.id),
-                )
-              }
-              pending={pendingIds.has(extension.id)}
-              tags={preferences.tags[extension.id] ?? []}
-              targetState={
-                targetStates[extension.id] ?? {
-                  integration: extension.isSelf ? 'not-integrated' : 'checking',
-                  reload: 'current',
+          <div className="grid grid-cols-1 gap-2.5 min-[720px]:grid-cols-2">
+            {visibleExtensions.map((extension) => (
+              <ExtensionCard
+                extension={extension}
+                favorite={preferences.favorites.includes(extension.id)}
+                key={extension.id}
+                onAddTag={(tag) =>
+                  updatePreferences((current) =>
+                    addTag(current, extension.id, tag),
+                  )
                 }
-              }
-            />
-          ))
+                onRemoveTag={(tag) =>
+                  updatePreferences((current) =>
+                    removeTag(current, extension.id, tag),
+                  )
+                }
+                onReload={() => {
+                  void reload(extension).then((success) => {
+                    setNotice({
+                      message: success
+                        ? `${extension.name} reloaded and reachable`
+                        : `${extension.name} reload timed out`,
+                      tone: success ? 'success' : 'error',
+                    });
+                  });
+                }}
+                onRestart={() => {
+                  void restart(extension).then((success) => {
+                    setNotice({
+                      message: success
+                        ? `${extension.name} restarted`
+                        : `${extension.name} could not restart`,
+                      tone: success ? 'success' : 'error',
+                    });
+                  });
+                }}
+                onToggleEnabled={(enabled) => {
+                  void setEnabled(extension, enabled).then((success) => {
+                    if (success) {
+                      setNotice({
+                        message: `${extension.name} ${enabled ? 'enabled' : 'disabled'}`,
+                        tone: 'success',
+                      });
+                    }
+                  });
+                }}
+                onToggleFavorite={() =>
+                  updatePreferences((current) =>
+                    toggleFavorite(current, extension.id),
+                  )
+                }
+                pending={pendingIds.has(extension.id)}
+                tags={preferences.tags[extension.id] ?? []}
+                targetState={
+                  targetStates[extension.id] ?? {
+                    integration: extension.isSelf
+                      ? 'not-integrated'
+                      : 'checking',
+                    reload: 'current',
+                  }
+                }
+              />
+            ))}
+          </div>
         ) : (
           <div className="flex min-h-52 flex-col items-center justify-center px-6 text-center">
             <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500 dark:bg-white/8 dark:text-zinc-400">

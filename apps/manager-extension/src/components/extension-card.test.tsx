@@ -24,22 +24,26 @@ const extension: ManagedExtension = {
 function renderCard(
   overrides: Partial<ManagedExtension> = {},
   onToggleEnabled = vi.fn(),
+  integration: 'connected' | 'not-integrated' = 'not-integrated',
 ) {
+  const onReload = vi.fn();
+  const onRestart = vi.fn();
   render(
     <ExtensionCard
       extension={{ ...extension, ...overrides }}
       favorite={false}
       onAddTag={vi.fn()}
       onRemoveTag={vi.fn()}
-      onReload={vi.fn()}
+      onReload={onReload}
+      onRestart={onRestart}
       onToggleEnabled={onToggleEnabled}
       onToggleFavorite={vi.fn()}
       pending={false}
       tags={[]}
-      targetState={{ integration: 'not-integrated', reload: 'current' }}
+      targetState={{ integration, reload: 'current' }}
     />,
   );
-  return onToggleEnabled;
+  return { onReload, onRestart, onToggleEnabled };
 }
 
 describe('ExtensionCard', () => {
@@ -52,7 +56,7 @@ describe('ExtensionCard', () => {
 
   it('requests a user-initiated disable', async () => {
     const user = userEvent.setup();
-    const onToggleEnabled = renderCard();
+    const { onToggleEnabled } = renderCard();
 
     await user.click(
       screen.getByRole('switch', { name: 'Disable Test Extension' }),
@@ -61,11 +65,48 @@ describe('ExtensionCard', () => {
     expect(onToggleEnabled).toHaveBeenCalledWith(false);
   });
 
+  it('offers a user-initiated restart for a non-integrated extension', async () => {
+    const user = userEvent.setup();
+    const { onRestart } = renderCard();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Restart Test Extension' }),
+    );
+
+    expect(onRestart).toHaveBeenCalledOnce();
+  });
+
   it('prevents destructive actions against the manager itself', () => {
     renderCard({ isSelf: true });
 
     expect(
       screen.getByRole('switch', { name: 'Disable Test Extension' }),
+    ).toBeDisabled();
+    expect(screen.queryByText('Target not integrated')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Restart Test Extension' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('reloads integrated targets instead of restarting them', async () => {
+    const user = userEvent.setup();
+    const { onReload } = renderCard({}, vi.fn(), 'connected');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Reload Test Extension' }),
+    );
+
+    expect(onReload).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByRole('button', { name: 'Restart Test Extension' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('requires a non-integrated extension to be enabled before restart', () => {
+    renderCard({ enabled: false });
+
+    expect(
+      screen.getByRole('button', { name: 'Restart Test Extension' }),
     ).toBeDisabled();
   });
 });
