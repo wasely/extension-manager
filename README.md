@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/extension-manager-logo.png" alt="Extension Manager logo" width="180"></p>
+
 # Extension Manager
 
 A persistent Chrome side panel for the extensions you are actively building.
