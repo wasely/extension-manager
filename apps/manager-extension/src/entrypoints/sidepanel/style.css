@@ -1,9 +1,21 @@
 @import 'tailwindcss';
+@source '../../**/*.{ts,tsx,html}';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   color-scheme: light;
+  --surface: #f7f7f8;
+  --surface-translucent: rgb(247 247 248 / 0.9);
+  --surface-raised: #ffffff;
+  --surface-muted: #f0f0f2;
+  --surface-hover: #e9e9ec;
+  --border: rgb(24 24 27 / 0.1);
+  --border-soft: rgb(24 24 27 / 0.065);
+  --border-strong: rgb(24 24 27 / 0.18);
+  --text: #18181b;
+  --text-muted: #5f5f69;
+  --text-subtle: #92929c;
   font-family:
     Inter,
     ui-sans-serif,
@@ -18,6 +30,17 @@
 
 :root.dark {
   color-scheme: dark;
+  --surface: #0c0c0f;
+  --surface-translucent: rgb(12 12 15 / 0.9);
+  --surface-raised: #141418;
+  --surface-muted: #19191e;
+  --surface-hover: #212127;
+  --border: rgb(255 255 255 / 0.09);
+  --border-soft: rgb(255 255 255 / 0.06);
+  --border-strong: rgb(255 255 255 / 0.16);
+  --text: #f4f4f5;
+  --text-muted: #aaaab4;
+  --text-subtle: #71717c;
 }
 
 * {
@@ -34,6 +57,7 @@ body,
 
 body {
   min-height: 100vh;
+  background: var(--surface);
 }
 
 button,
@@ -45,6 +69,18 @@ summary {
 button:not(:disabled),
 summary {
   cursor: pointer;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+::selection {
+  background: rgb(139 92 246 / 0.22);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,9 +1,27 @@
-import { AlertCircle, Moon, RefreshCw, Search, Sun, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  Cable,
+  Laptop,
+  Moon,
+  RefreshCw,
+  Search,
+  Sun,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { ExtensionCard } from '../../components/extension-card';
-import { type ExtensionFilter, selectExtensions } from '../../core/extensions';
+import { Button } from '../../components/ui/button';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Toast } from '../../components/ui/toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '../../components/ui/tooltip';
 import { bridgeStatusLabel } from '../../core/bridge';
+import { type ExtensionFilter, selectExtensions } from '../../core/extensions';
 import {
   addTag,
   removeTag,
@@ -14,6 +32,7 @@ import { useManagedExtensions } from '../../hooks/use-managed-extensions';
 import { useNativeBridge } from '../../hooks/use-native-bridge';
 import { usePreferences } from '../../hooks/use-preferences';
 import { useTargetIntegrations } from '../../hooks/use-target-integrations';
+import { cn } from '../../lib/utils';
 
 const filters: Array<{ label: string; value: ExtensionFilter }> = [
   { label: 'Development', value: 'development' },
@@ -27,6 +46,31 @@ function applyTheme(theme: Preferences['theme']) {
   document.documentElement.classList.toggle(
     'dark',
     theme === 'dark' || (theme === 'system' && prefersDark),
+  );
+}
+
+function ThemeIcon({ theme }: { theme: Preferences['theme'] }) {
+  if (theme === 'system') return <Laptop aria-hidden="true" size={13} />;
+  if (theme === 'dark') return <Moon aria-hidden="true" size={13} />;
+  return <Sun aria-hidden="true" size={13} />;
+}
+
+function RowSkeleton() {
+  return (
+    <div className="px-3 py-2.5">
+      <div className="flex gap-2.5">
+        <Skeleton className="size-8 shrink-0 rounded-md" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="h-2 w-16" />
+          <Skeleton className="h-2.5 w-4/5" />
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-between pl-[42px]">
+        <Skeleton className="h-2.5 w-28" />
+        <Skeleton className="h-7 w-24" />
+      </div>
+    </div>
   );
 }
 
@@ -64,7 +108,7 @@ export default function App() {
 
   useEffect(() => {
     if (!notice) return;
-    const timeout = window.setTimeout(() => setNotice(null), 1800);
+    const timeout = window.setTimeout(() => setNotice(null), 3000);
     return () => window.clearTimeout(timeout);
   }, [notice]);
 
@@ -78,6 +122,23 @@ export default function App() {
         tags: preferences.tags,
       }),
     [extensions, preferences, query],
+  );
+
+  const extensionItems = useMemo(
+    () => extensions.filter((extension) => extension.type === 'extension'),
+    [extensions],
+  );
+
+  const filterCounts = useMemo<Record<ExtensionFilter, number>>(
+    () => ({
+      all: extensionItems.length,
+      development: extensionItems.filter(
+        (extension) => extension.installType === 'development',
+      ).length,
+      disabled: extensionItems.filter((extension) => !extension.enabled).length,
+      enabled: extensionItems.filter((extension) => extension.enabled).length,
+    }),
+    [extensionItems],
   );
 
   const updateFilter = (filter: ExtensionFilter) => {
@@ -97,248 +158,252 @@ export default function App() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-50 text-zinc-950 transition-colors dark:bg-[#0a0a0c] dark:text-zinc-50">
-      <header className="sticky top-0 z-10 border-b border-zinc-200/80 bg-zinc-50/92 px-3.5 pt-3 pb-3 backdrop-blur-xl dark:border-white/8 dark:bg-[#0a0a0c]/92">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-violet-600 text-[11px] font-black text-white shadow-sm shadow-violet-500/30">
-              EM
-            </span>
-            <div>
-              <h1 className="text-[13px] font-bold tracking-[-0.02em]">
-                Extension Manager
-              </h1>
-              <p className="text-[9px] font-medium text-zinc-400">
-                Developer control center
-              </p>
-            </div>
-          </div>
-
+    <TooltipProvider delayDuration={350}>
+      <main className="min-h-screen bg-[var(--surface)] text-[var(--text)]">
+        <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color:var(--surface-translucent)] p-2 backdrop-blur-xl">
           <div className="flex items-center gap-1">
-            <span
-              className={`mr-1 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[9px] font-medium ${
-                bridgeState.status === 'connected'
-                  ? 'border-emerald-500/15 bg-emerald-500/7 text-emerald-700 dark:text-emerald-300'
-                  : 'border-amber-500/15 bg-amber-500/7 text-amber-700 dark:text-amber-300'
-              }`}
-              title={bridgeState.error ?? 'Native companion connected'}
-            >
-              <span
-                className={`size-1.5 rounded-full ${
-                  bridgeState.status === 'connected'
-                    ? 'bg-emerald-400'
-                    : 'bg-amber-400'
-                }`}
+            <div className="relative min-w-0 flex-1">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--text-subtle)]"
+                size={13}
               />
-              {bridgeStatusLabel(bridgeState.status)}
-            </span>
-            <button
-              aria-label={`Theme: ${preferences.theme}`}
-              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/70 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:hover:bg-white/8 dark:hover:text-zinc-100"
-              onClick={cycleTheme}
-              title={`Theme: ${preferences.theme}`}
-              type="button"
-            >
-              {preferences.theme === 'dark' ? (
-                <Moon size={14} />
-              ) : (
-                <Sun size={14} />
+              <label className="sr-only" htmlFor="extension-search">
+                Search extensions
+              </label>
+              <input
+                autoComplete="off"
+                className="h-8 w-full rounded-md border border-[var(--border)] bg-[var(--surface-raised)] pr-8 pl-8 text-[10px] text-[var(--text)] outline-none transition-[border-color,box-shadow] placeholder:text-[var(--text-subtle)] focus:border-violet-400 focus:ring-2 focus:ring-violet-500/12"
+                id="extension-search"
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search extensions…"
+                spellCheck={false}
+                value={query}
+              />
+              {query && (
+                <button
+                  aria-label="Clear search"
+                  className="absolute top-1/2 right-1 z-10 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-subtle)] outline-none hover:bg-[var(--surface-hover)] hover:text-[var(--text)] focus-visible:ring-2 focus-visible:ring-violet-500/45"
+                  onClick={() => setQuery('')}
+                  type="button"
+                >
+                  <X aria-hidden="true" size={11} />
+                </button>
               )}
-            </button>
-            <button
-              aria-label="Refresh extension list"
-              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-200/70 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:hover:bg-white/8 dark:hover:text-zinc-100"
-              onClick={() => void refresh()}
-              title="Refresh extension list"
-              type="button"
-            >
-              <RefreshCw className={loading ? 'animate-spin' : ''} size={14} />
-            </button>
+            </div>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  aria-label={bridgeStatusLabel(bridgeState.status)}
+                  className={cn(
+                    'relative flex size-7 shrink-0 items-center justify-center rounded-md text-[var(--text-subtle)]',
+                    bridgeState.status === 'connected' &&
+                      'text-emerald-600 dark:text-emerald-400',
+                  )}
+                  role="status"
+                >
+                  <Cable aria-hidden="true" size={13} />
+                  <span
+                    className={cn(
+                      'absolute right-0.5 bottom-0.5 size-1.5 rounded-full ring-2 ring-[var(--surface)]',
+                      bridgeState.status === 'connected'
+                        ? 'bg-emerald-500'
+                        : 'bg-amber-500',
+                    )}
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {bridgeState.error ?? bridgeStatusLabel(bridgeState.status)}
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={`Theme: ${preferences.theme}`}
+                  onClick={cycleTheme}
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  <ThemeIcon theme={preferences.theme} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Theme: {preferences.theme}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Refresh extension list"
+                  onClick={() => void refresh()}
+                  size="icon-sm"
+                  variant="ghost"
+                >
+                  <RefreshCw
+                    aria-hidden="true"
+                    className={loading ? 'animate-spin' : ''}
+                    size={13}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh extensions</TooltipContent>
+            </Tooltip>
           </div>
-        </div>
 
-        <div className="relative mt-3">
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-zinc-400"
-            size={14}
-          />
-          <label className="sr-only" htmlFor="extension-search">
-            Search extensions
-          </label>
-          <input
-            autoComplete="off"
-            className="h-9 w-full rounded-lg border border-zinc-200 bg-white pr-8 pl-8 text-xs outline-none transition-[border-color,box-shadow] placeholder:text-zinc-400 focus:border-violet-400 focus:ring-3 focus:ring-violet-500/10 dark:border-white/10 dark:bg-zinc-900 dark:focus:border-violet-400"
-            id="extension-search"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search name, ID, or tag…"
-            spellCheck={false}
-            value={query}
-          />
-          {query && (
-            <button
-              aria-label="Clear search"
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100"
-              onClick={() => setQuery('')}
-              type="button"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </div>
-
-        <div className="mt-2 flex items-center justify-between gap-2">
           <div
             aria-label="Filter extensions"
-            className="flex min-w-0 gap-0.5 overflow-x-auto rounded-lg bg-zinc-200/60 p-0.5 dark:bg-white/7"
+            className="scrollbar-none mt-1.5 flex gap-0.5 overflow-x-auto"
             role="group"
           >
-            {filters.map((filter) => (
-              <button
-                aria-pressed={preferences.filter === filter.value}
-                className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-violet-500 ${
-                  preferences.filter === filter.value
-                    ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white'
-                    : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-                }`}
-                key={filter.value}
-                onClick={() => updateFilter(filter.value)}
-                type="button"
-              >
-                {filter.label}
-              </button>
-            ))}
+            {filters.map((filter) => {
+              const active = preferences.filter === filter.value;
+              return (
+                <button
+                  aria-pressed={active}
+                  className={cn(
+                    'inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[9px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-violet-500/45',
+                    active
+                      ? 'bg-violet-500/10 text-violet-700 dark:text-violet-300'
+                      : 'text-[var(--text-subtle)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-muted)]',
+                  )}
+                  key={filter.value}
+                  onClick={() => updateFilter(filter.value)}
+                  type="button"
+                >
+                  {filter.label}
+                  <span className="tabular-nums opacity-70">
+                    {filterCounts[filter.value]}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <span className="shrink-0 text-[9px] font-medium text-zinc-400">
-            {visibleExtensions.length} shown
-          </span>
-        </div>
-      </header>
+        </header>
 
-      <section aria-busy={loading || !ready} className="p-3">
-        {(error || preferencesError) && (
-          <div className="mb-2.5 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-700 dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-300">
-            <AlertCircle
-              aria-hidden="true"
-              className="mt-0.5 shrink-0"
-              size={13}
-            />
-            <span>{error ?? preferencesError}</span>
-          </div>
-        )}
-
-        {(loading || !ready) && !extensions.length ? (
-          <div
-            aria-label="Loading extensions"
-            className="grid grid-cols-1 gap-2.5 min-[720px]:grid-cols-2"
-          >
-            {[0, 1, 2].map((item) => (
-              <div
-                className="h-32 animate-pulse rounded-xl border border-zinc-200 bg-white dark:border-white/8 dark:bg-zinc-900"
-                key={item}
+        <section aria-busy={loading || !ready} className="p-2">
+          {(error || preferencesError) && (
+            <div className="mb-2 flex items-start gap-2 rounded-md bg-red-500/8 p-2 text-[10px] leading-4 text-red-700 dark:text-red-300">
+              <AlertTriangle
+                aria-hidden="true"
+                className="mt-0.5 shrink-0"
+                size={12}
               />
-            ))}
-          </div>
-        ) : visibleExtensions.length ? (
-          <div className="grid grid-cols-1 gap-2.5 min-[720px]:grid-cols-2">
-            {visibleExtensions.map((extension) => (
-              <ExtensionCard
-                bridgeState={bridgeState}
-                extension={extension}
-                favorite={preferences.favorites.includes(extension.id)}
-                key={extension.id}
-                onAddTag={(tag) =>
-                  updatePreferences((current) =>
-                    addTag(current, extension.id, tag),
-                  )
-                }
-                onRemoveTag={(tag) =>
-                  updatePreferences((current) =>
-                    removeTag(current, extension.id, tag),
-                  )
-                }
-                onReload={() => {
-                  void reload(extension).then((success) => {
-                    setNotice({
-                      message: success
-                        ? `${extension.name} reloaded and reachable`
-                        : `${extension.name} reload timed out`,
-                      tone: success ? 'success' : 'error',
-                    });
-                  });
-                }}
-                onRestart={() => {
-                  void restart(extension).then((success) => {
-                    setNotice({
-                      message: success
-                        ? `${extension.name} restarted`
-                        : `${extension.name} could not restart`,
-                      tone: success ? 'success' : 'error',
-                    });
-                  });
-                }}
-                onToggleEnabled={(enabled) => {
-                  void setEnabled(extension, enabled).then((success) => {
-                    if (success) {
-                      setNotice({
-                        message: `${extension.name} ${enabled ? 'enabled' : 'disabled'}`,
-                        tone: 'success',
-                      });
-                    }
-                  });
-                }}
-                onToggleFavorite={() =>
-                  updatePreferences((current) =>
-                    toggleFavorite(current, extension.id),
-                  )
-                }
-                pending={pendingIds.has(extension.id)}
-                tags={preferences.tags[extension.id] ?? []}
-                targetState={
-                  targetStates[extension.id] ?? {
-                    integration: extension.isSelf
-                      ? 'not-integrated'
-                      : 'checking',
-                    reload: 'current',
-                  }
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex min-h-52 flex-col items-center justify-center px-6 text-center">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-zinc-200 text-zinc-500 dark:bg-white/8 dark:text-zinc-400">
-              <Search size={16} />
+              <span>{error ?? preferencesError}</span>
             </div>
-            <h2 className="mt-3 text-xs font-semibold">No extensions found</h2>
-            <p className="mt-1 max-w-64 text-[10px] leading-4 text-zinc-500 dark:text-zinc-400">
-              Change the filter or search. Development shows only unpacked
-              extensions.
-            </p>
-          </div>
-        )}
-      </section>
+          )}
 
-      {notice && (
-        <div
-          aria-live="polite"
-          className={`fixed right-3 bottom-3 left-3 flex items-center gap-2 rounded-lg border bg-zinc-950 px-3 py-2 text-[11px] font-medium text-white shadow-xl dark:bg-zinc-100 dark:text-zinc-900 ${
-            notice.tone === 'success'
-              ? 'border-emerald-400/20'
-              : 'border-red-400/30'
-          }`}
-          role="status"
-        >
-          <span
-            className={`flex size-4 items-center justify-center rounded-full text-white ${
-              notice.tone === 'success' ? 'bg-emerald-500' : 'bg-red-500'
-            }`}
-          >
-            {notice.tone === 'success' ? '✓' : '!'}
-          </span>
-          {notice.message}
-        </div>
-      )}
-    </main>
+          {(loading || !ready) && !extensions.length ? (
+            <div
+              aria-label="Loading extensions"
+              className="divide-y divide-[var(--border-soft)] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-raised)]"
+            >
+              {[0, 1, 2].map((item) => (
+                <RowSkeleton key={item} />
+              ))}
+            </div>
+          ) : visibleExtensions.length ? (
+            <div className="divide-y divide-[var(--border-soft)] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] shadow-sm">
+              {visibleExtensions.map((extension) => (
+                <ExtensionCard
+                  bridgeState={bridgeState}
+                  extension={extension}
+                  favorite={preferences.favorites.includes(extension.id)}
+                  key={extension.id}
+                  onAddTag={(tag) =>
+                    updatePreferences((current) =>
+                      addTag(current, extension.id, tag),
+                    )
+                  }
+                  onRemoveTag={(tag) =>
+                    updatePreferences((current) =>
+                      removeTag(current, extension.id, tag),
+                    )
+                  }
+                  onReload={() => {
+                    void reload(extension).then((success) => {
+                      setNotice({
+                        message: success
+                          ? `${extension.name} reloaded and reachable`
+                          : `${extension.name} reload timed out`,
+                        tone: success ? 'success' : 'error',
+                      });
+                    });
+                  }}
+                  onRestart={() => {
+                    void restart(extension).then((success) => {
+                      setNotice({
+                        message: success
+                          ? `${extension.name} restarted`
+                          : `${extension.name} could not restart`,
+                        tone: success ? 'success' : 'error',
+                      });
+                    });
+                  }}
+                  onToggleEnabled={(enabled) => {
+                    void setEnabled(extension, enabled).then((success) => {
+                      setNotice({
+                        message: success
+                          ? `${extension.name} ${enabled ? 'enabled' : 'disabled'}`
+                          : `${extension.name} could not be updated`,
+                        tone: success ? 'success' : 'error',
+                      });
+                    });
+                  }}
+                  onToggleFavorite={() =>
+                    updatePreferences((current) =>
+                      toggleFavorite(current, extension.id),
+                    )
+                  }
+                  pending={pendingIds.has(extension.id)}
+                  tags={preferences.tags[extension.id] ?? []}
+                  targetState={
+                    targetStates[extension.id] ?? {
+                      integration: extension.isSelf
+                        ? 'not-integrated'
+                        : 'checking',
+                      reload: 'current',
+                    }
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex min-h-52 flex-col items-center justify-center px-6 text-center">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-[var(--surface-muted)] text-[var(--text-subtle)]">
+                <Search aria-hidden="true" size={14} />
+              </div>
+              <h2 className="mt-2.5 text-[11px] font-semibold">
+                {query ? 'No matching extensions' : 'No extensions here'}
+              </h2>
+              <p className="mt-1 max-w-64 text-[9px] leading-4 text-[var(--text-muted)]">
+                {query
+                  ? `Nothing matches “${query}”.`
+                  : 'Change the filter to see other extensions.'}
+              </p>
+              {query && (
+                <Button
+                  className="mt-2.5"
+                  onClick={() => setQuery('')}
+                  size="sm"
+                  variant="secondary"
+                >
+                  Clear search
+                </Button>
+              )}
+            </div>
+          )}
+        </section>
+
+        {notice && (
+          <Toast
+            message={notice.message}
+            onDismiss={() => setNotice(null)}
+            tone={notice.tone}
+          />
+        )}
+      </main>
+    </TooltipProvider>
   );
 }

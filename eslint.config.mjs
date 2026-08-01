@@ -6,6 +6,7 @@ export default tseslint.config(
   {
     ignores: [
       '**/.output/**',
+      '**/.preview/**',
       '**/.wxt/**',
       '**/coverage/**',
       '**/dist/**',

@@ -1,19 +1,31 @@
 import {
   Check,
-  ChevronDown,
   Copy,
   ExternalLink,
+  LoaderCircle,
   Plus,
   RotateCw,
+  Settings2,
+  ShieldCheck,
   Star,
   X,
 } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import {
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+  useState,
+} from 'react';
 
 import { openOptionsPage } from '../chrome/management';
-import type { ManagedExtension } from '../core/extensions';
 import type { BridgeState } from '../core/bridge';
+import type { ManagedExtension } from '../core/extensions';
 import type { TargetState } from '../hooks/use-target-integrations';
+import { cn } from '../lib/utils';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Switch } from './ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
 interface ExtensionCardProps {
   extension: ManagedExtension;
@@ -30,13 +42,42 @@ interface ExtensionCardProps {
   onRestart: () => void;
 }
 
-function StatusDot({ tone }: { tone: 'green' | 'muted' | 'orange' }) {
-  const toneClass = {
-    green: 'bg-emerald-400 shadow-[0_0_0_3px_rgb(52_211_153_/_0.12)]',
-    muted: 'bg-zinc-500',
-    orange: 'bg-amber-400 shadow-[0_0_0_3px_rgb(251_191_36_/_0.12)]',
-  }[tone];
-  return <span className={`size-1.5 shrink-0 rounded-full ${toneClass}`} />;
+function ActionTooltip({
+  children,
+  label,
+}: {
+  children: ReactElement;
+  label: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+function StatusText({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone: 'success' | 'warning' | 'muted';
+}) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--text-muted)]">
+      <span
+        aria-hidden="true"
+        className={cn(
+          'size-1.5 rounded-full',
+          tone === 'success' && 'bg-emerald-500',
+          tone === 'warning' && 'bg-amber-500',
+          tone === 'muted' && 'bg-zinc-400 dark:bg-zinc-600',
+        )}
+      />
+      {children}
+    </span>
+  );
 }
 
 export function ExtensionCard({
@@ -54,8 +95,12 @@ export function ExtensionCard({
   targetState,
 }: ExtensionCardProps) {
   const [copied, setCopied] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
+
+  const integrated = targetState.integration === 'connected';
+  const reloading = targetState.reload === 'reloading';
 
   const copyId = async () => {
     try {
@@ -75,14 +120,21 @@ export function ExtensionCard({
     setTagInput('');
   };
 
+  const actionLabel = integrated ? 'Reload' : 'Restart';
+  const actionTitle = integrated
+    ? 'Reload through the target bridge'
+    : !extension.enabled
+      ? 'Enable this extension before restarting it'
+      : 'Restart by disabling and re-enabling the extension';
+
   return (
-    <article className="group rounded-lg border border-zinc-200/80 bg-white p-3 shadow-sm shadow-zinc-950/5 transition-[border-color,box-shadow] duration-150 hover:border-zinc-300 hover:shadow-md dark:border-white/8 dark:bg-zinc-900/75 dark:shadow-black/20 dark:hover:border-white/15">
-      <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 text-sm font-semibold text-zinc-500 dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-300">
+    <article className="px-3 py-2.5 transition-colors hover:bg-[var(--surface-hover)]/45">
+      <div className="flex items-start gap-2.5">
+        <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface-muted)] text-xs font-bold text-[var(--text-muted)] shadow-sm">
           {extension.iconUrl ? (
             <img
               alt=""
-              className="size-8 object-contain"
+              className="size-7 object-contain"
               src={extension.iconUrl}
             />
           ) : (
@@ -91,235 +143,249 @@ export function ExtensionCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h2 className="truncate text-sm font-semibold tracking-[-0.01em] text-zinc-950 dark:text-zinc-50">
-                  {extension.name}
-                </h2>
-                {extension.isSelf && (
-                  <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-violet-600 uppercase dark:text-violet-300">
-                    Manager
-                  </span>
-                )}
-              </div>
-              <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
-                v{extension.version} · {extension.installType}
-              </p>
-            </div>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="truncate text-[12px] font-semibold tracking-[-0.01em] text-[var(--text)]">
+              {extension.name}
+            </h2>
+            {extension.isSelf && (
+              <Badge className="h-4 px-1 text-[8px]" tone="accent">
+                Manager
+              </Badge>
+            )}
+          </div>
+          <p className="mt-0.5 text-[9px] text-[var(--text-subtle)]">
+            v{extension.version}
+          </p>
+          {extension.description && (
+            <p className="mt-1 line-clamp-1 text-[10px] leading-4 text-[var(--text-muted)]">
+              {extension.description}
+            </p>
+          )}
+        </div>
 
-            <button
+        <div className="-mt-0.5 -mr-1 flex shrink-0 items-center">
+          <ActionTooltip
+            label={favorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Button
               aria-label={
                 favorite ? 'Remove from favorites' : 'Add to favorites'
               }
-              className="rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-amber-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:hover:bg-white/7"
               onClick={onToggleFavorite}
-              title={favorite ? 'Remove from favorites' : 'Add to favorites'}
-              type="button"
+              size="icon-sm"
+              variant="ghost"
             >
               <Star
                 aria-hidden="true"
-                className={favorite ? 'fill-amber-400 text-amber-400' : ''}
-                size={15}
+                className={cn(
+                  favorite
+                    ? 'fill-amber-400 text-amber-400'
+                    : 'text-[var(--text-subtle)]',
+                )}
+                size={13}
               />
-            </button>
-          </div>
+            </Button>
+          </ActionTooltip>
 
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
-            <span className="inline-flex items-center gap-1.5">
-              <StatusDot tone={extension.enabled ? 'green' : 'muted'} />
-              Chrome {extension.enabled ? 'enabled' : 'disabled'}
-            </span>
-            {!extension.isSelf && (
-              <span className="inline-flex items-center gap-1.5">
-                <StatusDot
-                  tone={
-                    targetState.integration === 'connected' ? 'green' : 'orange'
-                  }
-                />
-                Target{' '}
-                {targetState.integration === 'connected'
-                  ? 'integrated'
-                  : targetState.integration === 'checking'
-                    ? 'checking'
-                    : 'not integrated'}
-              </span>
-            )}
-          </div>
+          {extension.optionsUrl && (
+            <ActionTooltip label="Open options">
+              <Button
+                aria-label={`Open options for ${extension.name}`}
+                onClick={() =>
+                  void openOptionsPage(extension).catch(() => {
+                    setActionError('Chrome could not open this options page.');
+                  })
+                }
+                size="icon-sm"
+                variant="ghost"
+              >
+                <ExternalLink aria-hidden="true" size={13} />
+              </Button>
+            </ActionTooltip>
+          )}
+
+          <ActionTooltip label={detailsOpen ? 'Hide details' : 'Show details'}>
+            <Button
+              aria-expanded={detailsOpen}
+              aria-label={`${detailsOpen ? 'Hide' : 'Show'} details for ${extension.name}`}
+              onClick={() => setDetailsOpen((current) => !current)}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <Settings2 aria-hidden="true" size={13} />
+            </Button>
+          </ActionTooltip>
         </div>
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-zinc-100 pt-2.5 dark:border-white/7">
-        <button
-          aria-checked={extension.enabled}
-          aria-label={`${extension.enabled ? 'Disable' : 'Enable'} ${extension.name}`}
-          className="inline-flex h-7 shrink-0 items-center gap-2 rounded-lg border border-zinc-200 px-2.5 text-[11px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/5"
-          disabled={pending || extension.isSelf}
-          onClick={() => onToggleEnabled(!extension.enabled)}
-          role="switch"
-          title={
-            extension.isSelf
-              ? 'Extension Manager cannot disable itself'
-              : `${extension.enabled ? 'Disable' : 'Enable'} extension`
-          }
-          type="button"
-        >
-          <span
-            className={`relative h-3.5 w-6 shrink-0 rounded-full transition-colors ${
-              extension.enabled
-                ? 'bg-emerald-500'
-                : 'bg-zinc-300 dark:bg-zinc-600'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 size-2.5 rounded-full bg-white shadow-sm transition-transform ${
-                extension.enabled ? 'translate-x-3' : 'translate-x-0.5'
-              }`}
-            />
-          </span>
-          {pending ? 'Updating…' : extension.enabled ? 'Enabled' : 'Disabled'}
-        </button>
-
-        {extension.optionsUrl && (
-          <button
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 dark:text-zinc-400 dark:hover:bg-white/7 dark:hover:text-zinc-100"
-            onClick={() =>
-              void openOptionsPage(extension).catch(() => {
-                setActionError('Chrome could not open this options page.');
-              })
-            }
-            title="Open options page"
-            type="button"
-          >
-            <ExternalLink aria-hidden="true" size={13} />
-            Options
-          </button>
-        )}
-        {!extension.isSelf && (
-          <button
-            aria-label={`${targetState.integration === 'connected' ? 'Reload' : 'Restart'} ${extension.name}`}
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-white/7 dark:hover:text-zinc-100"
-            disabled={
-              pending ||
-              targetState.reload === 'reloading' ||
-              (targetState.integration !== 'connected' && !extension.enabled)
-            }
-            onClick={
-              targetState.integration === 'connected' ? onReload : onRestart
-            }
-            title={
-              targetState.integration === 'connected'
-                ? 'Reload extension through its target bridge'
-                : !extension.enabled
-                  ? 'Enable the extension before restarting it'
-                  : 'Restart extension by disabling and re-enabling it'
-            }
-            type="button"
-          >
-            <RotateCw
-              aria-hidden="true"
-              className={
-                targetState.reload === 'reloading' ? 'animate-spin' : ''
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pl-[42px]">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+          <StatusText tone={extension.enabled ? 'success' : 'muted'}>
+            <span className="sr-only">Chrome </span>
+            {extension.enabled ? 'Enabled' : 'Disabled'}
+          </StatusText>
+          {!extension.isSelf && (
+            <StatusText
+              tone={
+                integrated
+                  ? 'success'
+                  : targetState.integration === 'checking'
+                    ? 'muted'
+                    : 'warning'
               }
-              size={13}
-            />
-            {targetState.reload === 'reloading'
-              ? 'Reloading…'
-              : targetState.integration === 'connected'
-                ? 'Reload'
-                : 'Restart'}
-          </button>
-        )}
+            >
+              <span className="sr-only">Target </span>
+              {integrated
+                ? 'Integrated'
+                : targetState.integration === 'checking'
+                  ? 'Checking'
+                  : 'Needs integration'}
+            </StatusText>
+          )}
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {extension.isSelf ? (
+            <span className="inline-flex h-6 items-center gap-1 text-[9px] font-medium text-[var(--text-subtle)]">
+              <ShieldCheck aria-hidden="true" size={11} />
+              Protected
+            </span>
+          ) : (
+            <ActionTooltip
+              label={`${extension.enabled ? 'Disable' : 'Enable'} ${extension.name}`}
+            >
+              <Switch
+                aria-label={`${extension.enabled ? 'Disable' : 'Enable'} ${extension.name}`}
+                checked={extension.enabled}
+                disabled={pending}
+                onCheckedChange={onToggleEnabled}
+              />
+            </ActionTooltip>
+          )}
+
+          {!extension.isSelf && (
+            <Button
+              aria-label={`${actionLabel} ${extension.name}`}
+              className="min-w-[70px]"
+              disabled={
+                pending ||
+                reloading ||
+                (targetState.integration !== 'connected' && !extension.enabled)
+              }
+              onClick={integrated ? onReload : onRestart}
+              size="sm"
+              title={actionTitle}
+              variant="secondary"
+            >
+              {reloading ? (
+                <LoaderCircle
+                  aria-hidden="true"
+                  className="animate-spin"
+                  size={12}
+                />
+              ) : (
+                <RotateCw aria-hidden="true" size={12} />
+              )}
+              {reloading ? 'Working…' : actionLabel}
+            </Button>
+          )}
+        </div>
       </div>
 
       {actionError && (
-        <p
-          className="mt-2 rounded-md bg-red-500/8 px-2 py-1.5 text-[10px] text-red-600 dark:text-red-300"
+        <div
+          className="mt-2 ml-[42px] flex items-center justify-between gap-2 rounded-md bg-red-500/8 px-2 py-1.5 text-[10px] text-red-700 dark:text-red-300"
           role="alert"
         >
-          {actionError}
-        </p>
+          <span>{actionError}</span>
+          <button
+            aria-label="Dismiss error"
+            className="shrink-0 rounded p-0.5 hover:bg-red-500/10"
+            onClick={() => setActionError(null)}
+            type="button"
+          >
+            <X aria-hidden="true" size={11} />
+          </button>
+        </div>
       )}
 
-      <details className="mt-2 group/details">
-        <summary className="flex cursor-pointer list-none items-center justify-between rounded-md py-1 text-[10px] font-medium text-zinc-400 outline-none hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-violet-500 dark:hover:text-zinc-200 [&::-webkit-details-marker]:hidden">
-          Details and capability status
-          <ChevronDown
-            aria-hidden="true"
-            className="transition-transform group-open/details:rotate-180"
-            size={13}
-          />
-        </summary>
-
-        <div className="mt-2 space-y-3 rounded-lg bg-zinc-50 p-2.5 dark:bg-black/15">
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px]">
-            <dt className="text-zinc-400">Dev process</dt>
-            <dd className="text-right text-zinc-600 dark:text-zinc-300">
+      {detailsOpen && (
+        <div className="mt-2.5 ml-[42px] space-y-2.5 border-t border-[var(--border-soft)] pt-2.5">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[9px]">
+            <dt className="text-[var(--text-subtle)]">Dev process</dt>
+            <dd className="text-right text-[var(--text-muted)]">
               {bridgeState.status === 'connected'
-                ? 'Available · bridge connected'
+                ? 'Bridge connected'
                 : `Unavailable · ${bridgeState.status}`}
             </dd>
-            <dt className="text-zinc-400">Build</dt>
-            <dd className="text-right text-zinc-600 dark:text-zinc-300">
-              Unavailable · project not paired
-            </dd>
-            <dt className="text-zinc-400">Reload</dt>
-            <dd className="text-right text-zinc-600 dark:text-zinc-300">
+            <dt className="text-[var(--text-subtle)]">Build</dt>
+            <dd className="text-right text-[var(--text-muted)]">Not paired</dd>
+            <dt className="text-[var(--text-subtle)]">Reload</dt>
+            <dd className="text-right text-[var(--text-muted)]">
               {extension.isSelf
                 ? 'Manager protected'
-                : targetState.integration !== 'connected'
-                  ? 'Manual restart available'
+                : !integrated
+                  ? 'Manual restart'
                   : targetState.reload === 'failed'
-                    ? 'Failed · target did not return'
-                    : targetState.reload === 'reloading'
-                      ? 'Reloading · waiting for PING'
-                      : 'Current · target reachable'}
+                    ? 'Target unavailable'
+                    : reloading
+                      ? 'Waiting for target'
+                      : 'Target reachable'}
             </dd>
-            <dt className="text-zinc-400">Permissions</dt>
-            <dd className="text-right text-zinc-600 dark:text-zinc-300">
+            <dt className="text-[var(--text-subtle)]">Permissions</dt>
+            <dd className="text-right text-[var(--text-muted)]">
               {extension.permissions.length} API ·{' '}
               {extension.hostPermissions.length} host
             </dd>
           </dl>
 
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <code className="truncate text-[9px] text-zinc-500 dark:text-zinc-400">
-                {extension.id}
-              </code>
-              <button
-                aria-label="Copy extension ID"
-                className="shrink-0 rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 focus-visible:outline-2 focus-visible:outline-violet-500 dark:hover:bg-white/10 dark:hover:text-zinc-100"
-                onClick={() => void copyId()}
-                title="Copy extension ID"
-                type="button"
-              >
-                {copied ? <Check size={12} /> : <Copy size={12} />}
-              </button>
-            </div>
+          <div className="flex h-7 items-center gap-2 rounded-md bg-[var(--surface-muted)] px-2">
+            <code className="min-w-0 flex-1 truncate text-[8px] text-[var(--text-muted)]">
+              {extension.id}
+            </code>
+            <Button
+              aria-label="Copy extension ID"
+              onClick={() => void copyId()}
+              size="icon-sm"
+              variant="ghost"
+            >
+              {copied ? (
+                <Check
+                  aria-hidden="true"
+                  className="text-emerald-500"
+                  size={11}
+                />
+              ) : (
+                <Copy aria-hidden="true" size={11} />
+              )}
+            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             {tags.map((tag) => (
               <button
-                className="inline-flex items-center gap-1 rounded-md bg-zinc-200/70 px-1.5 py-1 text-[9px] font-medium text-zinc-600 hover:bg-red-100 hover:text-red-600 dark:bg-white/8 dark:text-zinc-300 dark:hover:bg-red-500/15 dark:hover:text-red-300"
+                className="inline-flex h-6 items-center gap-1 rounded-md bg-[var(--surface-muted)] px-1.5 text-[8px] font-medium text-[var(--text-muted)] hover:bg-red-500/8 hover:text-red-600 dark:hover:text-red-300"
                 key={tag}
                 onClick={() => onRemoveTag(tag)}
                 title={`Remove ${tag} tag`}
                 type="button"
               >
                 {tag}
-                <X aria-hidden="true" size={9} />
+                <X aria-hidden="true" size={8} />
               </button>
             ))}
-            <form className="flex min-w-24 flex-1" onSubmit={submitTag}>
+            <form className="min-w-28 flex-1" onSubmit={submitTag}>
               <label className="sr-only" htmlFor={`tag-${extension.id}`}>
                 Add tag to {extension.name}
               </label>
-              <div className="flex h-6 w-full items-center rounded-md border border-zinc-200 bg-white px-1.5 focus-within:border-violet-400 dark:border-white/10 dark:bg-zinc-900">
-                <Plus aria-hidden="true" className="text-zinc-400" size={10} />
+              <div className="flex h-6 items-center rounded-md bg-[var(--surface-muted)] px-2 focus-within:ring-2 focus-within:ring-violet-500/30">
+                <Plus
+                  aria-hidden="true"
+                  className="text-[var(--text-subtle)]"
+                  size={10}
+                />
                 <input
-                  className="min-w-0 flex-1 bg-transparent px-1 text-[9px] text-zinc-700 outline-none placeholder:text-zinc-400 dark:text-zinc-200"
+                  className="min-w-0 flex-1 bg-transparent px-1 text-[9px] text-[var(--text)] outline-none placeholder:text-[var(--text-subtle)]"
                   id={`tag-${extension.id}`}
                   onChange={(event) => setTagInput(event.target.value)}
                   placeholder="Add tag"
@@ -329,7 +395,7 @@ export function ExtensionCard({
             </form>
           </div>
         </div>
-      </details>
+      )}
     </article>
   );
 }

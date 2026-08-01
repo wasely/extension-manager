@@ -4,6 +4,7 @@ Thumbs.db
 node_modules/
 .wxt/
 .output/
+.preview/
 coverage/
 dist/
 .env
