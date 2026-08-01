@@ -1,101 +1,110 @@
 # Extension Manager
 
-Extension Manager is a Manifest V3 developer control center for finding, inspecting, enabling, and disabling locally loaded Chrome extensions from a persistent side panel.
+A persistent Chrome side panel for the extensions you are actively building.
 
-The browser manager, cooperative target reload bridge, and native companion transport are implemented. Chrome does not provide an API that directly reloads another extension, so reliable reloads use the target SDK.
+![Extension Manager showing development extensions, integration state, and reload controls](docs/assets/extension-manager-side-panel.png)
 
-## Current features
+_The UI preview uses fixture extension data._
 
-- Real installed-extension data from `chrome.management.getAll()`
-- Development extensions shown by default using `installType === "development"`
-- Search by name, description, extension ID, or tag
-- Development/all/enabled/disabled filters
-- Favorites and tags stored in `chrome.storage.local`
-- User-initiated enable/disable controls with explicit Chrome errors
-- User-initiated restart fallback for enabled non-integrated extensions
-- Self-protection: Extension Manager cannot disable itself
-- Live refresh on install, uninstall, enable, and disable events
-- Options-page links, permission counts, extension IDs, versions, and icons
-- System, dark, and light themes
-- Honest unavailable states for target integration, builds, reloads, and the local companion
-- Stable development ID for exact target allowlisting
-- Zod-validated target `PING`, metadata, and acknowledged self-reload protocol
-- Reload completion verified by bounded `PING` retries
-- Integrated WXT target fixture
-- Native companion with validated length-prefixed protocol and reconnect status
-- Windows, macOS, Linux, and Chromium host install/uninstall scripts
+Instead of returning to `chrome://extensions` to find the same unpacked extension, Extension Manager keeps its state and controls beside the page you are testing. Search by name, ID, description, or tag; enable and disable extensions; open their options; and restart or reload them from one list.
 
-## Requirements
+Chrome's management API can enumerate and toggle installed extensions. It cannot directly reload a different extension. Extension Manager makes that boundary visible:
 
-- Node.js 22 or newer
-- Corepack
-- Google Chrome 114 or newer
+| Target                         | Action      | What happens                                                                      |
+| ------------------------------ | ----------- | --------------------------------------------------------------------------------- |
+| Standard unpacked extension    | **Restart** | The manager disables and re-enables it through `chrome.management`.               |
+| Extension using the target SDK | **Reload**  | The target reloads itself, then the manager pings it until it is reachable again. |
 
-## Build and load
+No integration is required for inventory, search, metadata, enable/disable, options links, favorites, tags, or manual restart.
+
+## Build and open the side panel
+
+Requirements: Node.js 22+, Corepack, and Google Chrome 114+.
 
 ```powershell
 corepack pnpm install
-corepack pnpm build
+corepack pnpm --filter @extension-manager/manager-extension build
 ```
 
 Then:
 
-1. Open `chrome://extensions` once for initial installation.
-2. Enable **Developer mode**.
-3. Choose **Load unpacked**.
-4. Select `apps/manager-extension/.output/chrome-mv3`.
-5. Pin Extension Manager and click its toolbar icon. The side panel opens.
+1. Open `chrome://extensions` and enable **Developer mode**.
+2. Choose **Load unpacked**.
+3. Select `apps/manager-extension/.output/chrome-mv3`.
+4. Pin Extension Manager and click its toolbar icon.
 
-Install the local bridge on Windows:
+The default filter shows extensions loaded with `installType === "development"`. Switch to **All** when you need the rest of the installed inventory.
+
+## Add verified reloads
+
+Reliable reload is cooperative because Chrome does not provide a cross-extension reload API.
+
+1. Add `@extension-manager/target` to the extension you are developing.
+2. Allow the manager's stable ID: `gpmlcdigokplenooecjmlphknhaidnjf`.
+3. Register the target listener in the extension's background entrypoint.
+
+The exact WXT example and message contract are in [Target integration](docs/TARGET_INTEGRATION.md). An integrated fixture lives in `fixtures/integrated-target-extension`.
+
+The reload sequence is deliberately bounded:
+
+```text
+manager sends RELOAD_EXTENSION
+  → target acknowledges
+  → target calls chrome.runtime.reload()
+  → manager retries PING
+  → UI reports reachable or timed out
+```
+
+## Native companion
+
+The native companion transport and installers are implemented. Today it reports connection health; project pairing, process control, build commands, file watching, and log streaming are not shipped yet.
+
+Windows installation:
 
 ```powershell
 & apps/native-host/scripts/install-windows.ps1
 ```
 
-See [native host setup](docs/NATIVE_HOST_SETUP.md) for macOS, Linux, Chromium, and uninstall instructions.
+See [Native host setup](docs/NATIVE_HOST_SETUP.md) for macOS, Linux, Chromium, and uninstall instructions.
 
-Subsequent daily management happens in the side panel. WXT development mode is available with:
+On Windows, stop a running `native-host.exe` before rebuilding it. Windows locks the executable and the SEA packaging step will otherwise fail with `EBUSY`.
 
-```powershell
-corepack pnpm dev
-```
+## What is implemented
 
-## Validation
+- Live inventory from `chrome.management.getAll()`, refreshed on install, uninstall, enable, and disable events
+- Development/all/enabled/disabled filters, full-text search, favorites, and tags
+- User-initiated enable/disable and restart actions with self-protection for the manager
+- Target SDK with sender validation, acknowledged reload, and bounded health checks
+- Native messaging transport with validated length-prefixed frames and reconnect state
+- Compact light/dark/system interface built for Chrome's resizable side panel
 
-```powershell
-corepack pnpm validate
-```
-
-Individual commands:
+## Validate changes
 
 ```powershell
 corepack pnpm format
 corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm test
-corepack pnpm build
+corepack pnpm --filter @extension-manager/manager-extension build
 ```
 
-## Structure
+Run the fixture-backed UI outside Chrome:
 
-```text
-apps/manager-extension/   WXT + React manager extension
-apps/native-host/         Node native-messaging companion
-packages/protocol/        shared target and native schemas
-docs/ARCHITECTURE.md      system boundaries and delivery slices
-docs/IMPLEMENTATION_STATUS.md
-docs/SECURITY.md
+```powershell
+corepack pnpm --filter @extension-manager/manager-extension preview
 ```
 
-See [architecture](docs/ARCHITECTURE.md), [implementation status](docs/IMPLEMENTATION_STATUS.md), and [security model](docs/SECURITY.md).
+The preview starts on `http://127.0.0.1:4391` and uses mocked extension data. It does not exercise Chrome APIs.
 
-Target authors: follow [target integration](docs/TARGET_INTEGRATION.md). The stable manager ID is `gpmlcdigokplenooecjmlphknhaidnjf`.
+## Current boundaries
 
-## Current limitations
+- Non-integrated extensions can be restarted, not reliably reloaded.
+- Project pairing, builds, watchers, logs, and dev-server controls remain pending.
+- Optional tab refresh is not implemented.
+- Automated tests cover domain, protocol, transport, and React component behavior; Chrome extension E2E coverage remains pending.
 
-- Reliable reload requires the target SDK; non-integrated extensions are represented honestly and cannot be auto-reloaded.
-- Project pairing, build commands, file watching, logs, and dev-server controls are the next native-host slice.
-- Optional tab refresh is not implemented and remains off.
-- Automated tests cover domain and component behavior; Chrome extension E2E coverage is pending.
+Deeper references: [architecture](docs/ARCHITECTURE.md), [implementation status](docs/IMPLEMENTATION_STATUS.md), and [security model](docs/SECURITY.md).
 
-Technical behavior follows the official Chrome documentation for [`chrome.management`](https://developer.chrome.com/docs/extensions/reference/api/management) and [`chrome.sidePanel`](https://developer.chrome.com/docs/extensions/reference/api/sidePanel).
+API behavior follows Chrome's official documentation for [`chrome.management`](https://developer.chrome.com/docs/extensions/reference/api/management), [`chrome.sidePanel`](https://developer.chrome.com/docs/extensions/reference/api/sidePanel), and [native messaging](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging).
+
+If this replaces part of your `chrome://extensions` routine, star the repository so it is easy to find for the next extension you build.

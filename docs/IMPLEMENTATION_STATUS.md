@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated: 2026-07-30
+Updated: 2026-07-31
 
 ## Current slice
 
@@ -19,7 +19,7 @@ Slice 3 native transport and installation: **foundation complete**. The persiste
 - Search, enabled-state filters, favorites, tags, themes, and stored preferences.
 - User-initiated enable/disable with optimistic UI, Chrome rejection handling, and self-protection.
 - User-initiated restart fallback for enabled, non-integrated extensions, with Chrome rejection handling.
-- Compact responsive cards with collision-safe toggles and two-column wide-panel layout.
+- Compact single-list side-panel UI with Radix switches, progressive details, fixture preview, and light/dark/system themes.
 - Options-page, extension metadata, permission counts, and copy-ID controls.
 - Domain and React component tests.
 - Stable manager ID derived from a committed public manifest key.
@@ -51,6 +51,7 @@ Slice 3 native transport and installation: **foundation complete**. The persiste
 - `corepack pnpm format`: passed.
 - `corepack pnpm lint`: passed.
 - `corepack pnpm typecheck`: passed.
-- `corepack pnpm test`: 38 tests passed across manager, native host, protocol, and target SDK.
-- `corepack pnpm build`: passed for manager, protocol, target SDK, and integrated fixture.
+- `corepack pnpm test`: 43 tests passed across manager, native host, protocol, and target SDK.
+- Manager extension, protocol, target SDK, integrated fixture, and preview builds passed.
+- Full workspace build requires the installed Windows native host to be stopped so its executable can be replaced.
 - Manual Chrome smoke test: pending.
