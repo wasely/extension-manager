@@ -1,2 +1,0 @@
-#!/usr/bin/env sh
-exec node "$(dirname "$0")/../dist/index.js"
