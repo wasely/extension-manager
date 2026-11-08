@@ -116,6 +116,7 @@ If this replaces part of your `chrome://extensions` routine, star the repository
 Small, scoped work is labelled and waiting: [good first issues](https://github.com/wasely/extension-manager/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) name the files to touch and what "done" looks like. Comment to claim one. Pull requests get reviewed within a couple of days, and every contributor is credited in the release notes.
 
 <!-- discord-incentive:start -->
+
 ### 💬 Why join the Discord first
 
 **[discord.gg/grokbot](https://discord.gg/grokbot)** is the one server for every blixvip repo, and it gets you more than a chat window:
@@ -124,4 +125,5 @@ Small, scoped work is labelled and waiting: [good first issues](https://github.c
 - 🏷️ **A contributor role** on the server the moment your first pull request is merged.
 - 🗺️ **A say in what gets built.** The roadmap is argued out there before it turns into issues.
 - 🙋 **A human to ask.** Stuck on setup, or unsure whether an idea is even wanted? Faster than waiting on an issue thread.
+
 <!-- discord-incentive:end -->
